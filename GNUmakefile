@@ -95,10 +95,7 @@ run: _ensure-dirs
 # run-registry: like run but pulls provider from registry.terraform.io instead of local plugin dir
 .PHONY: run-registry
 run-registry: _ensure-dirs
-	podman run --rm -it \
-	  -v $(WORKSPACE):/workspace:Z \
-	  -v $(INSTALL_DIR):/install-dir:Z \
-	  $(IMAGE_NAME):$(IMAGE_TAG) \
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
 	  bash -c "unset TF_CLI_ARGS_init && exec bash"
 
 .PHONY: run-terraform

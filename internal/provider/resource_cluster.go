@@ -110,8 +110,8 @@ func (r *ClusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		Attributes: map[string]schema.Attribute{
 			// Required
 			"assisted_service_url": schema.StringAttribute{
-				Required:    true,
-				Description: "Base URL of the Assisted Installer service, e.g. https://assisted-service.example.com.",
+				Optional:    true,
+				Description: "Base URL of the Assisted Installer service. Defaults to the provider-level assisted_service_url.",
 			},
 			"cluster_name": schema.StringAttribute{
 				Required:    true,
@@ -343,6 +343,9 @@ func (r *ClusterResource) Configure(_ context.Context, req resource.ConfigureReq
 
 func (r *ClusterResource) buildClient(plan *ClusterModel) *AssistedClient {
 	baseURL := plan.AssistedServiceURL.ValueString()
+	if baseURL == "" && r.providerData != nil {
+		baseURL = r.providerData.AssistedServiceURL
+	}
 	pullSecret := plan.PullSecret.ValueString()
 
 	// Resource-level static token takes highest precedence
