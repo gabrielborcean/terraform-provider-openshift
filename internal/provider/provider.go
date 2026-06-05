@@ -21,20 +21,27 @@ type OpenShiftProvider struct {
 
 // OpenShiftProviderModel holds the provider-level configuration values.
 type OpenShiftProviderModel struct {
-	Kubeconfig      types.String `tfsdk:"kubeconfig"`
-	InstallBinary   types.String `tfsdk:"install_binary"`
-	OcBinary        types.String `tfsdk:"oc_binary"`
-	PullSecretFile  types.String `tfsdk:"pull_secret_file"`
-	SSHKey          types.String `tfsdk:"ssh_key"`
+	Kubeconfig           types.String `tfsdk:"kubeconfig"`
+	InstallBinary        types.String `tfsdk:"install_binary"`
+	OcBinary             types.String `tfsdk:"oc_binary"`
+	PullSecretFile       types.String `tfsdk:"pull_secret_file"`
+	SSHKey               types.String `tfsdk:"ssh_key"`
+	AssistedServiceURL   types.String `tfsdk:"assisted_service_url"`
+	AssistedServiceToken types.String `tfsdk:"assisted_service_token"`
+	AssistedOfflineToken types.String `tfsdk:"assisted_offline_token"`
 }
 
 // ProviderData is passed to resources and data sources via ConfigureProvider.
 type ProviderData struct {
-	Kubeconfig     string
-	InstallBinary  string
-	OcBinary       string
-	PullSecretFile string
-	SSHKey         string
+	Kubeconfig           string
+	InstallBinary        string
+	OcBinary             string
+	PullSecretFile       string
+	SSHKey               string
+	Version              string
+	AssistedServiceURL   string
+	AssistedServiceToken string
+	AssistedTokenManager *TokenManager // non-nil when offline_token is set
 }
 
 // New returns a function that creates a new OpenShiftProvider.
@@ -74,6 +81,20 @@ func (p *OpenShiftProvider) Schema(_ context.Context, _ provider.SchemaRequest, 
 				Sensitive:   true,
 				Description: "SSH public key string for cluster nodes.",
 			},
+			"assisted_service_url": schema.StringAttribute{
+				Optional:    true,
+				Description: "Base URL of the Assisted Installer service, e.g. https://assisted-service.example.com.",
+			},
+			"assisted_service_token": schema.StringAttribute{
+				Optional:    true,
+				Sensitive:   true,
+				Description: "Bearer token for the Assisted Installer API. Mutually exclusive with assisted_offline_token.",
+			},
+			"assisted_offline_token": schema.StringAttribute{
+				Optional:    true,
+				Sensitive:   true,
+				Description: "Red Hat offline token (from console.redhat.com/openshift/token). Automatically exchanged for a bearer token and refreshed when it expires. Mutually exclusive with assisted_service_token.",
+			},
 		},
 	}
 }
@@ -85,7 +106,7 @@ func (p *OpenShiftProvider) Configure(ctx context.Context, req provider.Configur
 		return
 	}
 
-	data := &ProviderData{}
+	data := &ProviderData{Version: p.version}
 
 	// kubeconfig
 	if !config.Kubeconfig.IsNull() && !config.Kubeconfig.IsUnknown() {
@@ -123,6 +144,18 @@ func (p *OpenShiftProvider) Configure(ctx context.Context, req provider.Configur
 		data.SSHKey = config.SSHKey.ValueString()
 	}
 
+	// assisted_service_url
+	if !config.AssistedServiceURL.IsNull() && !config.AssistedServiceURL.IsUnknown() {
+		data.AssistedServiceURL = config.AssistedServiceURL.ValueString()
+	}
+
+	// assisted_service_token / assisted_offline_token (mutually exclusive)
+	if !config.AssistedServiceToken.IsNull() && !config.AssistedServiceToken.IsUnknown() {
+		data.AssistedServiceToken = config.AssistedServiceToken.ValueString()
+	} else if !config.AssistedOfflineToken.IsNull() && !config.AssistedOfflineToken.IsUnknown() {
+		data.AssistedTokenManager = NewTokenManager(config.AssistedOfflineToken.ValueString())
+	}
+
 	resp.DataSourceData = data
 	resp.ResourceData = data
 }
@@ -141,5 +174,12 @@ func (p *OpenShiftProvider) Resources(_ context.Context) []func() resource.Resou
 }
 
 func (p *OpenShiftProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewCompatibilityDataSource,
+	}
+}
+
+// Version returns the provider version string (set at build time via main.go).
+func (p *OpenShiftProvider) Version() string {
+	return p.version
 }

@@ -64,6 +64,7 @@ type BMHost struct {
 type InstallConfigModel struct {
 	ClusterName          types.String `tfsdk:"cluster_name"`
 	BaseDomain           types.String `tfsdk:"base_domain"`
+	OCPVersion           types.String `tfsdk:"ocp_version"`
 	APIVIP               types.String `tfsdk:"api_vip"`
 	IngressVIP           types.String `tfsdk:"ingress_vip"`
 	ControlPlaneReplicas types.Int64  `tfsdk:"control_plane_replicas"`
@@ -124,6 +125,10 @@ func (r *InstallConfigResource) Schema(_ context.Context, _ resource.SchemaReque
 		Attributes: map[string]schema.Attribute{
 			"cluster_name": schema.StringAttribute{Required: true},
 			"base_domain":  schema.StringAttribute{Required: true},
+			"ocp_version": schema.StringAttribute{
+				Optional:    true,
+				Description: "OpenShift version to deploy (e.g. 4.14). Used for compatibility checks.",
+			},
 			"api_vip":      schema.StringAttribute{Required: true},
 			"ingress_vip":  schema.StringAttribute{Required: true},
 			"control_plane_replicas": schema.Int64Attribute{
@@ -242,6 +247,22 @@ func (r *InstallConfigResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	// Compatibility check.
+	if !plan.OCPVersion.IsNull() && !plan.OCPVersion.IsUnknown() && plan.OCPVersion.ValueString() != "" {
+		pv := "dev"
+		if r.providerData != nil && r.providerData.Version != "" {
+			pv = r.providerData.Version
+		}
+		if err := CheckCompat(plan.OCPVersion.ValueString(), pv); err != nil {
+			if IsUnknownVersion(err) {
+				resp.Diagnostics.AddWarning("OCP version compatibility", err.Error())
+			} else {
+				resp.Diagnostics.AddError("OCP version compatibility", err.Error())
+				return
+			}
+		}
+	}
+
 	rendered, err := r.renderInstallConfig(ctx, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError("Rendering install-config.yaml", err.Error())
@@ -291,6 +312,22 @@ func (r *InstallConfigResource) Update(ctx context.Context, req resource.UpdateR
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Compatibility check.
+	if !plan.OCPVersion.IsNull() && !plan.OCPVersion.IsUnknown() && plan.OCPVersion.ValueString() != "" {
+		pv := "dev"
+		if r.providerData != nil && r.providerData.Version != "" {
+			pv = r.providerData.Version
+		}
+		if err := CheckCompat(plan.OCPVersion.ValueString(), pv); err != nil {
+			if IsUnknownVersion(err) {
+				resp.Diagnostics.AddWarning("OCP version compatibility", err.Error())
+			} else {
+				resp.Diagnostics.AddError("OCP version compatibility", err.Error())
+				return
+			}
+		}
 	}
 
 	rendered, err := r.renderInstallConfig(ctx, &plan)
