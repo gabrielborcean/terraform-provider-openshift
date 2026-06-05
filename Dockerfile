@@ -102,18 +102,24 @@ RUN set -eux; \
 # Terraform resolves local providers from TF_CLI_ARGS_init / -plugin-dir, or
 # from ~/.terraform.d/plugins. We install to the well-known local path so the
 # workspace's main.tf doesn't need a network registry.
-COPY --from=builder /out/terraform-provider-openshift \
-    /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0
+# ── install provider into filesystem mirror layout ────────────────────────────
+# Version is injected at build time via --build-arg PROVIDER_VERSION=x.y.z
+# Matches the layout expected by .terraformrc.airgapped (filesystem_mirror).
+ARG PROVIDER_VERSION=0.4.17
 
-# Symlink for arm64 so the same image works on both arches
 RUN set -eux; \
     ARCH=$(dpkg --print-architecture); \
-    if [ "${ARCH}" != "amd64" ]; then \
-        mkdir -p "/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_${ARCH}"; \
-        ln -sf \
-            /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0 \
-            "/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_${ARCH}/terraform-provider-openshift_v0.1.0"; \
-    fi
+    mkdir -p "/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/${PROVIDER_VERSION}/linux_${ARCH}"
+
+COPY --from=builder /out/terraform-provider-openshift \
+    /tmp/terraform-provider-openshift
+
+RUN set -eux; \
+    ARCH=$(dpkg --print-architecture); \
+    DEST="/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/${PROVIDER_VERSION}/linux_${ARCH}/terraform-provider-openshift_v${PROVIDER_VERSION}"; \
+    cp /tmp/terraform-provider-openshift "${DEST}"; \
+    chmod +x "${DEST}"; \
+    rm /tmp/terraform-provider-openshift
 
 # ── workspace dirs ────────────────────────────────────────────────────────────
 RUN mkdir -p /root/.terraform.d/plugin-cache /workspace /secrets /install-dir

@@ -2,7 +2,7 @@ HOSTNAME=registry.terraform.io
 NAMESPACE=gabrielborcean
 NAME=openshift
 BINARY=terraform-provider-${NAME}
-VERSION=0.1.0
+VERSION=$(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0-dev")
 OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 IMAGE_NAME   ?= ocp-toolbox
@@ -145,7 +145,7 @@ clean:
 	rm -f ${BINARY}
 
 PUBLISH_IMAGE ?= ocp-publish
-RELEASE_TAG   ?= v0.1.0
+RELEASE_TAG   ?= v$(VERSION)
 
 # ── container targets ─────────────────────────────────────────────────────────
 
@@ -169,6 +169,7 @@ image:
 	  --build-arg OCP_VERSION=$(OCP_VERSION) \
 	  --build-arg TERRAFORM_VERSION=$(TF_VERSION) \
 	  --build-arg MIRROR_REGISTRY_VERSION=$(MR_VERSION) \
+	  --build-arg PROVIDER_VERSION=$(VERSION) \
 	  -t $(IMAGE_NAME):$(IMAGE_TAG) \
 	  -f Dockerfile . && touch .image-built
 

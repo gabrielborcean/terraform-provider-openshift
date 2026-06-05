@@ -5,8 +5,9 @@ cluster_name         = "ocp"
 base_dns_domain      = "globex.example.internal"
 machine_network_cidr = "10.2.0.0/24"
 
-assisted_service_url = "http://bastion.globex.example.internal:8090"
-offline_token        = ""   # self-hosted, no token needed
+deploy_assisted_service   = true
+assisted_service_base_url = "http://bastion.globex.example.internal:8090"
+offline_token             = ""   # self-hosted, no token needed
 
 bastion_host = "bastion.globex.example.internal"
 bastion_user = "core"

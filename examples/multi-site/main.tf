@@ -8,8 +8,26 @@ terraform {
 }
 
 provider "openshift" {
-  assisted_service_url   = var.assisted_service_url
+  # When deploy_assisted_service = true the self-hosted service takes over;
+  # use its URL instead of the Red Hat hosted one.
+  assisted_service_url   = var.deploy_assisted_service ? var.assisted_service_base_url : var.assisted_service_url
   assisted_offline_token = var.offline_token != "" ? var.offline_token : null
+}
+
+# ── Self-hosted Assisted Installer (airgapped / self-managed) ─────────────────
+# Set deploy_assisted_service = true in your customer's common.tfvars to run
+# Assisted Installer on your own bastion instead of api.openshift.com.
+
+resource "openshift_assisted_service" "bastion" {
+  count = var.deploy_assisted_service ? 1 : 0
+
+  bastion_host     = var.bastion_host
+  bastion_user     = var.bastion_user
+  bastion_ssh_key  = var.bastion_ssh_key != "" ? var.bastion_ssh_key : null
+  service_base_url = var.assisted_service_base_url
+
+  mirror_registry_url = var.mirror_registry_url != "" ? var.mirror_registry_url : null
+  mirror_registry_ca  = var.mirror_registry_ca != "" ? var.mirror_registry_ca : null
 }
 
 # ── Cluster ───────────────────────────────────────────────────────────────────
@@ -28,6 +46,8 @@ resource "openshift_cluster" "this" {
 
   additional_trust_bundle = var.additional_trust_bundle != "" ? var.additional_trust_bundle : null
   image_content_sources   = length(var.image_content_sources) > 0 ? var.image_content_sources : null
+
+  depends_on = [openshift_assisted_service.bastion]
 }
 
 # ── Boot: PXE ─────────────────────────────────────────────────────────────────

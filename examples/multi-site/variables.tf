@@ -64,6 +64,30 @@ variable "assisted_service_url" {
   default     = "https://api.openshift.com"
 }
 
+variable "deploy_assisted_service" {
+  description = "Deploy self-hosted Assisted Installer on the bastion. Set true for airgapped sites."
+  type        = bool
+  default     = false
+}
+
+variable "assisted_service_base_url" {
+  description = "URL the self-hosted Assisted Installer will be reachable at. Used when deploy_assisted_service = true."
+  type        = string
+  default     = ""
+}
+
+variable "mirror_registry_url" {
+  description = "Mirror registry URL for self-hosted Assisted Installer (airgapped). E.g. bastion.example.internal:8443"
+  type        = string
+  default     = ""
+}
+
+variable "mirror_registry_ca" {
+  description = "PEM CA certificate for the mirror registry."
+  type        = string
+  default     = ""
+}
+
 variable "offline_token" {
   description = "Red Hat offline token for api.openshift.com. Not needed for self-hosted."
   type        = string
