@@ -23,19 +23,32 @@ help:
 	@echo ""
 	@echo "  NEW HERE? Start with:  make setup"
 	@echo ""
-	@echo "  make setup             Check prerequisites and place secrets"
-	@echo "  make image             Build the ocp-toolbox container image (do this once)"
-	@echo "  make run-local         Build provider from source + run terraform apply"
-	@echo "  make run-registry      Pull provider from registry + run terraform apply"
-	@echo "  make run               Interactive shell inside the container"
+	@echo "  ── first time ───────────────────────────────────────────────"
+	@echo "  make setup             Check prerequisites, show missing secrets"
+	@echo "  make image             Build the ocp-toolbox container image (do once)"
 	@echo ""
-	@echo "  make build             Build the provider binary locally (requires Go)"
+	@echo "  ── deploy ───────────────────────────────────────────────────"
+	@echo "  make plan              terraform plan  (review before applying)"
+	@echo "  make run-local         Build provider from source + terraform apply"
+	@echo "  make run-registry      Pull provider from registry + terraform apply"
+	@echo "  make destroy           terraform destroy (tear down cluster + infra)"
+	@echo "  make shell             Interactive shell inside the container"
+	@echo ""
+	@echo "  ── validate ─────────────────────────────────────────────────"
+	@echo "  make validate          terraform validate (syntax + schema check)"
+	@echo "  make test-registry     Smoke-test: pull provider from registry, init only"
+	@echo ""
+	@echo "  ── release ──────────────────────────────────────────────────"
+	@echo "  make publish           Build + push a signed GitHub release (set RELEASE_TAG)"
+	@echo ""
+	@echo "  ── development ──────────────────────────────────────────────"
+	@echo "  make build             Build provider binary locally (requires Go)"
 	@echo "  make install           Install provider to ~/.terraform.d/plugins/"
 	@echo "  make test              Run unit tests"
 	@echo "  make testacc           Run acceptance tests (requires live cluster)"
 	@echo "  make fmt               Format Go source"
 	@echo "  make lint              Run golangci-lint"
-	@echo "  make docs              Regenerate provider docs"
+	@echo "  make docs              Regenerate provider docs with tfplugindocs"
 	@echo "  make clean             Remove built binary"
 	@echo ""
 
@@ -139,9 +152,35 @@ image:
 	  -f Dockerfile .
 
 
-.PHONY: run
-run: _ensure-dirs
+.PHONY: shell
+shell: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)"
+
+.PHONY: run
+run: shell
+
+.PHONY: plan
+plan: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "rm -f .terraform.lock.hcl && \
+	    terraform init && \
+	    terraform plan \
+	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
+	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
+	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+
+.PHONY: destroy
+destroy: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "terraform destroy \
+	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
+	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
+	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+
+.PHONY: validate
+validate: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "rm -f .terraform.lock.hcl && terraform init -backend=false && terraform validate"
 
 # run-local: build provider locally, inject into container, then apply (no registry needed)
 .PHONY: run-local

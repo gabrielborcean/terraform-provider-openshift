@@ -256,13 +256,28 @@ Or run `make setup` to see which files are present and which are missing.
 ## Make targets
 
 ```
-make help               Show all available targets (also the default — just run 'make')
-make setup              Check prerequisites and show which secrets are missing
-make image              Build the ocp-toolbox container image (do this once)
-make run-local          Build provider from source, inject into container, run apply
-make run-registry       Pull provider from registry.terraform.io, run apply
-make run                Interactive shell inside the container (local provider)
-make build              Build the provider binary locally (requires Go)
+make                    Show all targets (same as make help)
+
+# First time
+make setup              Check prerequisites, show which secrets are missing
+make image              Build the ocp-toolbox container image (do once)
+
+# Deploy
+make plan               terraform plan — review changes before applying
+make run-local          Build provider from source + terraform apply
+make run-registry       Pull provider from registry.terraform.io + terraform apply
+make destroy            terraform destroy — tear down cluster and all infrastructure
+make shell              Interactive shell inside the container
+
+# Validate
+make validate           terraform validate — syntax and schema check only
+make test-registry      Smoke-test: pull provider from registry, run init only
+
+# Release
+make publish            Build + push a signed GitHub release (set RELEASE_TAG=vX.Y.Z)
+
+# Development
+make build              Build provider binary locally (requires Go)
 make install            Install provider to ~/.terraform.d/plugins/
 make test               Run unit tests
 make testacc            Run acceptance tests (requires live cluster)
