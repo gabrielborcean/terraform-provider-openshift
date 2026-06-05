@@ -223,7 +223,7 @@ All fields are optional and fall back to environment variables or binary detecti
 
 | Argument | Default | Description |
 |---|---|---|
-| `GO_VERSION` | `1.21` | Go toolchain version for the builder stage |
+| `GO_VERSION` | `1.25` | Go toolchain version for the builder stage |
 | `TERRAFORM_VERSION` | `1.8.5` | Terraform CLI version |
 | `OCP_VERSION` | `4.14.37` | OCP release (controls `openshift-install`, `oc`, `oc-mirror` versions) |
 | `MIRROR_REGISTRY_VERSION` | `2.0.3` | Quay mirror-registry version |

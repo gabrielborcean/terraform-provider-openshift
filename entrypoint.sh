@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ── resolve runtime arch for the plugin dir ───────────────────────────────────
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-PLUGIN_BASE="/usr/local/lib/tf-plugins/registry.terraform.io/r2dts/openshift/0.1.0/linux_${ARCH}"
+PLUGIN_BASE="/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_${ARCH}"
 export TF_CLI_ARGS_init="-plugin-dir=/usr/local/lib/tf-plugins"
 
 # ── warn about expected mounts ────────────────────────────────────────────────
@@ -24,7 +24,7 @@ echo "ocp-toolbox ready"
 echo "  terraform       $(terraform version -json | jq -r '.terraform_version')"
 echo "  openshift-install $(openshift-install version | head -1)"
 echo "  oc              $(oc version --client 2>/dev/null | head -1)"
-echo "  oc-mirror       $(oc-mirror version --output=json 2>/dev/null | jq -r '.clientVersion.gitVersion' || oc-mirror version 2>&1 | head -1)"
+echo "  oc-mirror       $(oc-mirror version 2>&1 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' | head -1 || echo "installed")"
 echo "  mirror-registry $(ls -la /usr/local/bin/mirror-registry 2>/dev/null | awk '{print $NF, "(installed)"}' || echo "NOT FOUND")"
 echo "  provider plugin ${PLUGIN_BASE}"
 echo ""

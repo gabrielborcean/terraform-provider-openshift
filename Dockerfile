@@ -13,7 +13,7 @@
 #     ocp-toolbox:latest
 
 # ── versions ──────────────────────────────────────────────────────────────────
-ARG GO_VERSION=1.21
+ARG GO_VERSION=1.25
 ARG TERRAFORM_VERSION=1.8.5
 ARG OCP_VERSION=4.14.37
 ARG MIRROR_REGISTRY_VERSION=2.0.3
@@ -103,16 +103,16 @@ RUN set -eux; \
 # from ~/.terraform.d/plugins. We install to the well-known local path so the
 # workspace's main.tf doesn't need a network registry.
 COPY --from=builder /out/terraform-provider-openshift \
-    /usr/local/lib/tf-plugins/registry.terraform.io/r2dts/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0
+    /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0
 
 # Symlink for arm64 so the same image works on both arches
 RUN set -eux; \
     ARCH=$(dpkg --print-architecture); \
     if [ "${ARCH}" != "amd64" ]; then \
-        mkdir -p "/usr/local/lib/tf-plugins/registry.terraform.io/r2dts/openshift/0.1.0/linux_${ARCH}"; \
+        mkdir -p "/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_${ARCH}"; \
         ln -sf \
-            /usr/local/lib/tf-plugins/registry.terraform.io/r2dts/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0 \
-            "/usr/local/lib/tf-plugins/registry.terraform.io/r2dts/openshift/0.1.0/linux_${ARCH}/terraform-provider-openshift_v0.1.0"; \
+            /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_amd64/terraform-provider-openshift_v0.1.0 \
+            "/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/0.1.0/linux_${ARCH}/terraform-provider-openshift_v0.1.0"; \
     fi
 
 # ── workspace dirs ────────────────────────────────────────────────────────────
