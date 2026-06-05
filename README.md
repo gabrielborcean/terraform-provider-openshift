@@ -2,6 +2,30 @@
 
 Terraform provider for OpenShift deployments — bare metal (airgapped or connected) and AWS.
 
+---
+
+## New here? Three steps to get running
+
+```sh
+# 1. Check prerequisites and see what secrets you need
+make setup
+
+# 2. Build the container image (do this once — takes ~5 min)
+make image
+
+# 3. Run terraform apply against the test config
+make run-registry WORKSPACE=$(pwd)/test-assisted
+```
+
+`make setup` will tell you exactly which files are missing from `./secrets/`. Once they're in place, `make image` and `make run-registry` do everything else.
+
+**To iterate on provider code without publishing a release:**
+```sh
+make run-local WORKSPACE=$(pwd)/test-assisted   # builds from source, no registry needed
+```
+
+---
+
 Manages the full lifecycle from a single `terraform apply`:
 
 | Target | Approach |
@@ -215,56 +239,17 @@ Required files before you start:
 
 ---
 
-## Quickstart
-
-### 1. Clone and build the image
-
-```sh
-git clone https://github.com/gabrielborcean/terraform-provider-openshift
-cd terraform-provider-openshift
-
-make image
-```
-
-The image (`ocp-toolbox:latest`) contains:
-- `terraform` + the provider binary (pre-installed, no registry needed)
-- `openshift-install` (for AWS IPI)
-- `oc` + `kubectl`
-- `oc-mirror`
-- `mirror-registry` (Quay)
-- `skopeo`
-
-### 2. Place secrets
+## Secrets
 
 ```sh
 mkdir -p secrets
-cp ~/Downloads/pull-secret.json secrets/pull-secret.json
+cp ~/Downloads/pull-secret.json secrets/pull-secret.json   # console.redhat.com/openshift/downloads
 cp ~/.ssh/id_rsa.pub            secrets/id_rsa.pub
-echo -n "YOUR_OFFLINE_TOKEN"  > secrets/offline-token.txt
+echo -n "YOUR_OFFLINE_TOKEN"  > secrets/offline-token.txt  # console.redhat.com/openshift/token
 chmod 600 secrets/pull-secret.json secrets/offline-token.txt
 ```
 
-### 3. Run
-
-```sh
-# Build provider from source and run apply (fastest iteration loop)
-make run-local WORKSPACE=$(pwd)/test-assisted
-
-# Pull provider from registry.terraform.io and run apply
-make run-registry WORKSPACE=$(pwd)/test-assisted
-
-# Interactive shell (local provider)
-make run WORKSPACE=$(pwd)/test-assisted
-```
-
-Inside the interactive shell:
-```sh
-terraform init
-terraform apply \
-  -var="offline_token=$(cat /secrets/offline-token.txt)" \
-  -var="pull_secret=$(cat /secrets/pull-secret.json)" \
-  -var="ssh_public_key=$(cat /secrets/ssh/id_rsa.pub)"
-```
+Or run `make setup` to see which files are present and which are missing.
 
 ---
 

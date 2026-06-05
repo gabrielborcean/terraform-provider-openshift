@@ -16,7 +16,58 @@ WORKSPACE    ?= $(CURDIR)/examples/bare-metal-airgapped
 INSTALL_DIR  ?= $(CURDIR)/.install-dir
 SECRETS_DIR  ?= $(CURDIR)/secrets
 
-default: build
+default: help
+
+.PHONY: help
+help:
+	@echo ""
+	@echo "  NEW HERE? Start with:  make setup"
+	@echo ""
+	@echo "  make setup             Check prerequisites and place secrets"
+	@echo "  make image             Build the ocp-toolbox container image (do this once)"
+	@echo "  make run-local         Build provider from source + run terraform apply"
+	@echo "  make run-registry      Pull provider from registry + run terraform apply"
+	@echo "  make run               Interactive shell inside the container"
+	@echo ""
+	@echo "  make build             Build the provider binary locally (requires Go)"
+	@echo "  make install           Install provider to ~/.terraform.d/plugins/"
+	@echo "  make test              Run unit tests"
+	@echo "  make testacc           Run acceptance tests (requires live cluster)"
+	@echo "  make fmt               Format Go source"
+	@echo "  make lint              Run golangci-lint"
+	@echo "  make docs              Regenerate provider docs"
+	@echo "  make clean             Remove built binary"
+	@echo ""
+
+.PHONY: setup
+setup:
+	@echo ""
+	@echo "=== terraform-provider-openshift setup ==="
+	@echo ""
+	@command -v podman >/dev/null 2>&1 || { echo "ERROR: podman not found — install podman first"; exit 1; }
+	@echo "✓ podman found"
+	@mkdir -p secrets
+	@touch secrets/.gitkeep
+	@echo ""
+	@echo "Place the following files in ./secrets/ before running make image:"
+	@echo ""
+	@echo "  secrets/pull-secret.json   — download from https://console.redhat.com/openshift/downloads"
+	@echo "  secrets/id_rsa.pub         — your SSH public key (ssh-keygen -t rsa if needed)"
+	@echo "  secrets/offline-token.txt  — get from https://console.redhat.com/openshift/token"
+	@echo ""
+	@for f in pull-secret.json id_rsa.pub offline-token.txt; do \
+	  if [ -f "secrets/$$f" ]; then \
+	    echo "  ✓ secrets/$$f"; \
+	  else \
+	    echo "  ✗ secrets/$$f  (MISSING)"; \
+	  fi; \
+	done
+	@echo ""
+	@echo "Once all secrets are present, run:"
+	@echo ""
+	@echo "  make image"
+	@echo "  make run-registry WORKSPACE=\$$(pwd)/test-assisted"
+	@echo ""
 
 .PHONY: build
 build:
