@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/gabe/Projects/r2dts/openshift 2>/dev/null && echo \"---\" && ls /Users/gabe/Projects/r2dts/ 2>/dev/null)",
+      "Bash(go mod *)",
+      "Bash(go build *)"
+    ]
+  }
+}

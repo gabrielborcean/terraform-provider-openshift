@@ -1,0 +1,17 @@
+# built binary
+terraform-provider-openshift
+
+# local install artifacts
+.install-dir/
+
+# secrets — never commit these
+secrets/*
+!secrets/.gitkeep
+
+# terraform working files
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/terraform.tfvars
+**/crash.log

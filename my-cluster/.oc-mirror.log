@@ -1,0 +1,27 @@
+{
+  "clientVersion": {
+    "major": "",
+    "minor": "",
+    "gitVersion": "4.14.0-202408260910.p0.ga0733c1.assembly.stream.el8-a0733c1",
+    "gitCommit": "a0733c17322f96d14f9158604fe74f1bfecc4a53",
+    "gitTreeState": "clean",
+    "buildDate": "2024-08-28T11:30:29Z",
+    "goVersion": "go1.20.12 X:strictfipsruntime",
+    "compiler": "gc",
+    "platform": "linux/arm64"
+  }
+}
+WARNING: This version information is deprecated and will be replaced with the output from --short. Use --output=yaml|json to get the full version.
+{
+  "clientVersion": {
+    "major": "",
+    "minor": "",
+    "gitVersion": "4.14.0-202408260910.p0.ga0733c1.assembly.stream.el8-a0733c1",
+    "gitCommit": "a0733c17322f96d14f9158604fe74f1bfecc4a53",
+    "gitTreeState": "clean",
+    "buildDate": "2024-08-28T11:30:29Z",
+    "goVersion": "go1.20.12 X:strictfipsruntime",
+    "compiler": "gc",
+    "platform": "linux/arm64"
+  }
+}
