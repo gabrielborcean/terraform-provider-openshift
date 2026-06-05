@@ -49,7 +49,7 @@ generate:
 
 .PHONY: docs
 docs:
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	$(shell go env GOPATH)/bin/tfplugindocs generate --provider-name openshift
 
 .PHONY: clean
 clean:
