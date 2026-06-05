@@ -1,0 +1,19 @@
+# Shared secrets — copy to terraform.tfvars (gitignored, auto-loaded)
+# These apply to ALL workspaces/sites.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+
+# Red Hat offline token — console.redhat.com/openshift/token
+offline_token = ""
+
+# Red Hat pull secret — console.redhat.com/openshift/downloads
+pull_secret = ""
+
+# SSH public key for cluster nodes
+ssh_public_key = ""
+
+# SSH private key for bastion access (PXE server, agent ISO upload, assisted service)
+bastion_ssh_key = ""
+
+# BMC password (site-b) — set once here, referenced in bmc_hosts
+# bmc_password = ""

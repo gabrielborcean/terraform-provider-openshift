@@ -12,7 +12,9 @@ TF_VERSION   ?= 1.8.5
 MR_VERSION   ?= 2.0.3
 
 # Mount points — override on the command line
-WORKSPACE    ?= $(CURDIR)/examples/bare-metal-airgapped
+WORKSPACE    ?= $(CURDIR)/examples/multi-site
+CUSTOMER     ?= acme
+ENV          ?= dev
 INSTALL_DIR  ?= $(CURDIR)/.install-dir
 SECRETS_DIR  ?= $(CURDIR)/secrets
 
@@ -27,7 +29,16 @@ help:
 	@echo "  make setup             Check prerequisites, show missing secrets"
 	@echo "  make image             Build the ocp-toolbox container image (do once)"
 	@echo ""
-	@echo "  ── deploy ───────────────────────────────────────────────────"
+	@echo "  ── multi-site (recommended) ─────────────────────────────────"
+	@echo "  make site-apply   CUSTOMER=acme ENV=dev    Deploy an environment"
+	@echo "  make site-plan    CUSTOMER=acme ENV=dev    Plan changes"
+	@echo "  make site-destroy CUSTOMER=acme ENV=prod   Tear down an environment"
+	@echo "  make site-list                             List all workspaces"
+	@echo ""
+	@echo "  Workspace = CUSTOMER-ENV (e.g. acme-dev, globex-prod)"
+	@echo "  Var-files loaded: workspaces/CUSTOMER/common.tfvars + workspaces/CUSTOMER/ENV.tfvars"
+	@echo ""
+	@echo "  ── single deploy ────────────────────────────────────────────"
 	@echo "  make plan              terraform plan  (review before applying)"
 	@echo "  make run-local         Build provider from source + terraform apply"
 	@echo "  make run-registry      Pull provider from registry + terraform apply"
@@ -216,6 +227,46 @@ test-registry:
 	  -v $(CURDIR)/test:/workspace:Z \
 	  $(IMAGE_NAME):$(IMAGE_TAG) \
 	  bash -c "unset TF_CLI_ARGS_init && terraform init && echo '--- PROVIDER PULL OK ---'"
+
+# ── multi-site workspace targets ──────────────────────────────────────────────
+# Usage: make site-plan    CUSTOMER=acme ENV=dev
+#        make site-apply   CUSTOMER=acme ENV=dev
+#        make site-destroy CUSTOMER=acme ENV=prod
+#        make site-list
+#
+# Workspace name = CUSTOMER-ENV  (e.g. acme-dev, globex-prod)
+# Loads: workspaces/CUSTOMER/common.tfvars  +  workspaces/CUSTOMER/ENV.tfvars
+
+_WORKSPACE_NAME = $(CUSTOMER)-$(ENV)
+_VAR_FILES      = -var-file=workspaces/$(CUSTOMER)/common.tfvars -var-file=workspaces/$(CUSTOMER)/$(ENV).tfvars
+
+.PHONY: site-plan
+site-plan: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "unset TF_CLI_ARGS_init && rm -f .terraform.lock.hcl && terraform init && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform workspace select $(_WORKSPACE_NAME) 2>/dev/null || \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform workspace new $(_WORKSPACE_NAME) && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform plan $(_VAR_FILES)"
+
+.PHONY: site-apply
+site-apply: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "unset TF_CLI_ARGS_init && rm -f .terraform.lock.hcl && terraform init && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform workspace select $(_WORKSPACE_NAME) 2>/dev/null || \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform workspace new $(_WORKSPACE_NAME) && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform apply $(_VAR_FILES)"
+
+.PHONY: site-destroy
+site-destroy: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "unset TF_CLI_ARGS_init && terraform init && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform workspace select $(_WORKSPACE_NAME) && \
+	    TF_WORKSPACE=$(_WORKSPACE_NAME) terraform destroy $(_VAR_FILES)"
+
+.PHONY: site-list
+site-list: _ensure-dirs
+	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "unset TF_CLI_ARGS_init && terraform init -backend=false 2>/dev/null && terraform workspace list"
 
 .PHONY: _ensure-dirs
 _ensure-dirs:

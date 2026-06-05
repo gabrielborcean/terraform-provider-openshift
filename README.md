@@ -295,6 +295,46 @@ Run `make setup` to check which secrets files are present in `./secrets/`.
 
 ---
 
+## Multi-site deployments
+
+One configuration, one workspace per site, independent state. Each site picks its own boot method.
+
+```sh
+# First time — copy and fill in shared secrets
+cp examples/multi-site/terraform.tfvars.example examples/multi-site/terraform.tfvars
+$EDITOR examples/multi-site/terraform.tfvars
+
+# Deploy each site
+make site-apply SITE=site-a   # PXE boot, unbonded NICs
+make site-apply SITE=site-b   # BMC/Redfish boot
+make site-apply SITE=site-c   # Agent ISO, airgapped
+
+# Review before deploying
+make site-plan SITE=site-a
+
+# Tear down one site without touching others
+make site-destroy SITE=site-b
+
+# See all workspaces
+make site-list
+```
+
+Per-site config lives in `examples/multi-site/workspaces/<site>.tfvars`. Shared secrets (pull secret, SSH key, offline token) live in `terraform.tfvars` and apply to all sites.
+
+```
+examples/multi-site/
+├── main.tf                     # cluster + conditional boot resource
+├── variables.tf                # all variables
+├── outputs.tf
+├── terraform.tfvars.example    # copy → terraform.tfvars, fill in secrets
+└── workspaces/
+    ├── site-a.tfvars           # PXE boot, unbonded NICs
+    ├── site-b.tfvars           # BMC/Redfish boot
+    └── site-c.tfvars           # Agent ISO, fully airgapped
+```
+
+---
+
 ## Make targets
 
 ```
@@ -304,7 +344,13 @@ make                    Show all targets (same as make help)
 make setup              Check prerequisites, show which secrets are missing
 make image              Build the ocp-toolbox container image (do once)
 
-# Deploy
+# Multi-site (recommended)
+make site-apply SITE=site-a    Deploy a site (workspace per site)
+make site-plan  SITE=site-a    Plan changes for a site
+make site-destroy SITE=site-a  Tear down a site without touching others
+make site-list                 List all site workspaces
+
+# Single deploy
 make plan               terraform plan — review changes before applying
 make run-local          Build provider from source + terraform apply
 make run-registry       Pull provider from registry.terraform.io + terraform apply
