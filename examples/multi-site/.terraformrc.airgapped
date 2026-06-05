@@ -1,0 +1,35 @@
+# Terraform CLI config — airgapped deployments
+#
+# Use this instead of .terraformrc on bastions with no internet access.
+# Copy it into place before running terraform:
+#
+#   cp .terraformrc.airgapped ~/.terraformrc
+#
+# The filesystem_mirror block tells Terraform to look in /usr/local/lib/tf-plugins
+# for provider binaries instead of contacting registry.terraform.io.
+#
+# Expected directory layout (created by `make install-mirror` or baked into the
+# ocp-toolbox image at build time):
+#
+#   /usr/local/lib/tf-plugins/
+#     registry.terraform.io/
+#       gabrielborcean/
+#         openshift/
+#           <version>/
+#             linux_amd64/
+#               terraform-provider-openshift_v<version>
+#
+# The `direct` block with `exclude` ensures Terraform never tries to reach the
+# internet for this provider — init will fail fast if the binary isn't staged
+# rather than hanging on a connection timeout.
+plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
+
+provider_installation {
+  filesystem_mirror {
+    path    = "/usr/local/lib/tf-plugins"
+    include = ["registry.terraform.io/gabrielborcean/openshift"]
+  }
+  direct {
+    exclude = ["registry.terraform.io/gabrielborcean/openshift"]
+  }
+}

@@ -52,6 +52,11 @@ help:
 	@echo "  ── release ──────────────────────────────────────────────────"
 	@echo "  make publish           Build + push a signed GitHub release (set RELEASE_TAG)"
 	@echo ""
+	@echo "  ── airgapped mirror ─────────────────────────────────────────"
+	@echo "  make install-mirror    Stage provider binary into filesystem mirror layout"
+	@echo "                         (/usr/local/lib/tf-plugins) for airgapped bastions"
+	@echo "  MIRROR_VERSION=0.4.16  Override version to stage (default: current tag)"
+	@echo ""
 	@echo "  ── development ──────────────────────────────────────────────"
 	@echo "  make build             Build provider binary locally (requires Go)"
 	@echo "  make install           Install provider to ~/.terraform.d/plugins/"
@@ -267,6 +272,36 @@ site-destroy: _ensure-dirs
 site-list: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
 	  bash -c "unset TF_CLI_ARGS_init && terraform init -backend=false 2>/dev/null && terraform workspace list"
+
+# ── airgapped filesystem mirror ───────────────────────────────────────────────
+# Stages the provider binary into the layout Terraform expects for a filesystem
+# mirror. Run this on an internet-connected machine, then rsync the result to
+# your airgapped bastion (or bake it into the ocp-toolbox image).
+#
+# Usage:
+#   make install-mirror                      # uses current git tag
+#   make install-mirror MIRROR_VERSION=0.4.16
+#
+# Output: /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/<ver>/linux_amd64/
+
+MIRROR_VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+MIRROR_DIR     = /usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift
+
+.PHONY: install-mirror
+install-mirror:
+	@if [ -z "$(MIRROR_VERSION)" ]; then \
+	  echo "ERROR: no git tag found. Set MIRROR_VERSION=x.y.z"; exit 1; fi
+	@echo "→ Staging provider v$(MIRROR_VERSION) into filesystem mirror..."
+	go build -o terraform-provider-openshift_v$(MIRROR_VERSION) .
+	mkdir -p $(MIRROR_DIR)/$(MIRROR_VERSION)/linux_amd64
+	cp terraform-provider-openshift_v$(MIRROR_VERSION) \
+	   $(MIRROR_DIR)/$(MIRROR_VERSION)/linux_amd64/terraform-provider-openshift_v$(MIRROR_VERSION)
+	rm terraform-provider-openshift_v$(MIRROR_VERSION)
+	@echo "✓ Staged: $(MIRROR_DIR)/$(MIRROR_VERSION)/linux_amd64/"
+	@echo ""
+	@echo "  Next steps for airgapped bastion:"
+	@echo "  1. rsync -av /usr/local/lib/tf-plugins bastion:/usr/local/lib/"
+	@echo "  2. cp examples/multi-site/.terraformrc.airgapped ~/.terraformrc"
 
 .PHONY: _ensure-dirs
 _ensure-dirs:
