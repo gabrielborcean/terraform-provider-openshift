@@ -256,17 +256,19 @@ Or run `make setup` to see which files are present and which are missing.
 ## Make targets
 
 ```
-make image              Build the container image with podman
-make run                Interactive shell with local provider plugin
+make help               Show all available targets (also the default — just run 'make')
+make setup              Check prerequisites and show which secrets are missing
+make image              Build the ocp-toolbox container image (do this once)
 make run-local          Build provider from source, inject into container, run apply
 make run-registry       Pull provider from registry.terraform.io, run apply
+make run                Interactive shell inside the container (local provider)
 make build              Build the provider binary locally (requires Go)
 make install            Install provider to ~/.terraform.d/plugins/
 make test               Run unit tests
 make testacc            Run acceptance tests (requires live cluster)
 make fmt                Format Go source
 make lint               Run golangci-lint
-make docs               Regenerate docs with tfplugindocs
+make docs               Regenerate provider docs with tfplugindocs
 make clean              Remove built binary
 ```
 
