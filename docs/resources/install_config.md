@@ -35,6 +35,7 @@ Generates an install-config.yaml for OpenShift bare metal IPI/UPI deployment.
 - `disconnected_registries` (Attributes List) Mirror registry entries for disconnected installations. (see [below for nested schema](#nestedatt--disconnected_registries))
 - `image_content_sources` (Attributes List) imageContentSources entries for mirrored images. (see [below for nested schema](#nestedatt--image_content_sources))
 - `network_type` (String) Network plugin type.
+- `ocp_version` (String) OpenShift version to deploy (e.g. 4.14). Used for compatibility checks.
 - `proxy` (Attributes) Proxy configuration for the cluster. (see [below for nested schema](#nestedatt--proxy))
 - `service_network_cidr` (String)
 - `worker_replicas` (Number) Number of worker replicas.

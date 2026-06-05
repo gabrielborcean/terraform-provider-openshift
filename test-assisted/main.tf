@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "openshift" {
-  assisted_service_url   = "https://api.openshift.com/api/assisted-install/v2"
+  assisted_service_url   = "https://api.openshift.com"
   assisted_offline_token = var.offline_token
 }
 

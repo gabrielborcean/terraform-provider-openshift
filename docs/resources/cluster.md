@@ -3,12 +3,12 @@
 page_title: "openshift_cluster Resource - openshift"
 subcategory: ""
 description: |-
-  Manages an OpenShift cluster lifecycle via openshift-install.
+  Manages an OpenShift cluster via the Assisted Installer API.
 ---
 
 # openshift_cluster (Resource)
 
-Manages an OpenShift cluster lifecycle via openshift-install.
+Manages an OpenShift cluster via the Assisted Installer API.
 
 
 
@@ -17,19 +17,64 @@ Manages an OpenShift cluster lifecycle via openshift-install.
 
 ### Required
 
-- `install_dir` (String) Directory containing install-config.yaml.
+- `api_vip` (String) Virtual IP address for the cluster API.
+- `base_dns_domain` (String) Base DNS domain for the cluster.
+- `cluster_name` (String) Name of the cluster.
+- `ingress_vip` (String) Virtual IP address for the cluster ingress.
+- `machine_network_cidr` (String) CIDR block for the machine network.
+- `openshift_version` (String) OpenShift version, e.g. '4.14'.
+- `pull_secret` (String, Sensitive) Red Hat pull secret JSON.
+- `ssh_public_key` (String, Sensitive) SSH public key for cluster nodes.
 
 ### Optional
 
-- `destroy_on_delete` (Boolean) Run openshift-install destroy cluster when this resource is deleted.
-- `install_binary` (String) Path to openshift-install binary. Overrides provider setting.
-- `log_level` (String) Log level for openshift-install (debug, info, warn, error).
-- `timeout` (String) Timeout for cluster creation/destruction (e.g. 90m, 2h).
+- `additional_trust_bundle` (String) PEM-encoded additional CA certificate bundle.
+- `assisted_service_token` (String, Sensitive) Bearer token for the Assisted Installer API. Overrides provider-level token.
+- `assisted_service_url` (String) Base URL of the Assisted Installer service. Defaults to the provider-level assisted_service_url.
+- `auto_install` (Boolean) Trigger installation automatically once the cluster reaches 'ready' status.
+- `cluster_network_cidr` (String) CIDR for the cluster pod network.
+- `control_plane_replicas` (Number) Number of control plane nodes.
+- `create_infra_env` (Boolean) Whether to create an infra-env and generate a discovery ISO.
+- `destroy_on_delete` (Boolean) Delete the cluster via the API when this resource is destroyed.
+- `host_wait_timeout` (String) Duration to wait for hosts to register.
+- `http_proxy` (String) HTTP proxy URL.
+- `https_proxy` (String) HTTPS proxy URL.
+- `image_content_sources` (Attributes List) Disconnected registry mirror configuration. (see [below for nested schema](#nestedatt--image_content_sources))
+- `infra_env_image_type` (String) Discovery ISO type: 'full-iso' or 'minimal-iso'.
+- `install_timeout` (String) Duration to wait for installation to complete.
+- `network_type` (String) Network plugin type.
+- `no_proxy` (String) Comma-separated list of hosts/CIDRs to bypass the proxy.
+- `service_network_cidr` (String) CIDR for the service network.
+- `wait_for_hosts` (Number) Block until this many hosts register in the infra-env (0 = do not wait).
+- `worker_replicas` (Number) Number of worker nodes.
 
 ### Read-Only
 
 - `api_url` (String) Cluster API URL.
-- `cluster_id` (String) Cluster infrastructure ID read from metadata.json.
+- `cluster_id` (String) Cluster UUID assigned by the Assisted Installer.
 - `console_url` (String) Cluster web console URL.
-- `kubeadmin_password_path` (String) Path to the kubeadmin-password file.
-- `kubeconfig_path` (String) Path to the generated kubeconfig file.
+- `discovery_iso_url` (String) Download URL for the discovery ISO.
+- `hosts` (Attributes List) Hosts registered in the infra-env. (see [below for nested schema](#nestedatt--hosts))
+- `infra_env_id` (String) Infra-env UUID assigned by the Assisted Installer.
+- `kubeadmin_password` (String, Sensitive) kubeadmin password (available after installation).
+- `status` (String) Current cluster status.
+- `status_info` (String) Human-readable status detail.
+
+<a id="nestedatt--image_content_sources"></a>
+### Nested Schema for `image_content_sources`
+
+Required:
+
+- `mirrors` (List of String) Mirror registries for the source.
+- `source` (String) Source registry.
+
+
+<a id="nestedatt--hosts"></a>
+### Nested Schema for `hosts`
+
+Read-Only:
+
+- `hostname` (String) Requested hostname.
+- `id` (String) Host UUID.
+- `role` (String) Host role: master or worker.
+- `status` (String) Host status.

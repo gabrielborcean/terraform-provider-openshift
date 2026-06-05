@@ -26,6 +26,12 @@ else
     echo "WARNING: ${SECRETS_DIR}/id_rsa.pub not found — skipping mount" >&2
 fi
 
+if [[ -f "${SECRETS_DIR}/offline-token.txt" ]]; then
+    args+=(-v "${SECRETS_DIR}/offline-token.txt:/secrets/offline-token.txt:ro,Z")
+else
+    echo "WARNING: ${SECRETS_DIR}/offline-token.txt not found — skipping mount" >&2
+fi
+
 args+=("${IMAGE}")
 
 exec podman "${args[@]}" "$@"

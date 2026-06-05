@@ -16,6 +16,9 @@ Provider for airgapped on-premises OpenShift deployments on bare metal.
 
 ### Optional
 
+- `assisted_offline_token` (String, Sensitive) Red Hat offline token (from console.redhat.com/openshift/token). Automatically exchanged for a bearer token and refreshed when it expires. Mutually exclusive with assisted_service_token.
+- `assisted_service_token` (String, Sensitive) Bearer token for the Assisted Installer API. Mutually exclusive with assisted_offline_token.
+- `assisted_service_url` (String) Base URL of the Assisted Installer service, e.g. https://assisted-service.example.com.
 - `install_binary` (String) Path to openshift-install binary. Defaults to 'openshift-install' on PATH.
 - `kubeconfig` (String) Path to kubeconfig file. Defaults to KUBECONFIG env var or ~/.kube/config.
 - `oc_binary` (String) Path to oc binary. Defaults to 'oc' on PATH.
