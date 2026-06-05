@@ -1,4 +1,4 @@
-module github.com/r2dts/terraform-provider-openshift
+module github.com/gabrielborcean/terraform-provider-openshift
 
 go 1.25.8
 

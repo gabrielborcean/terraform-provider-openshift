@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/r2dts/terraform-provider-openshift/internal/provider"
+	"github.com/gabrielborcean/terraform-provider-openshift/internal/provider"
 )
 
 var (
@@ -20,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/r2dts/openshift",
+		Address: "registry.terraform.io/gabrielborcean/openshift",
 		Debug:   debug,
 	}
 

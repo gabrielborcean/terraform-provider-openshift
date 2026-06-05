@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     openshift = {
-      source  = "registry.terraform.io/r2dts/openshift"
+      source  = "registry.terraform.io/gabrielborcean/openshift"
       version = "~> 0.1"
     }
   }

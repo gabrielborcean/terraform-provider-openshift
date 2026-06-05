@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 
-	"github.com/r2dts/terraform-provider-openshift/internal/provider"
+	"github.com/gabrielborcean/terraform-provider-openshift/internal/provider"
 )
 
 // testProviderVersion is the version string used in unit/acceptance tests.
@@ -17,7 +17,7 @@ const testProviderVersion = "0.1.0"
 // testAccProtoV6ProviderFactories is used in acceptance tests.
 // It maps the provider address to a factory function returning a proto6 server.
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"registry.terraform.io/r2dts/openshift": providerserver.NewProtocol6WithError(
+	"registry.terraform.io/gabrielborcean/openshift": providerserver.NewProtocol6WithError(
 		provider.New(testProviderVersion)(),
 	),
 }

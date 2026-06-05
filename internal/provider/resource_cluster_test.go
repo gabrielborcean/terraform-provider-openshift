@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/r2dts/terraform-provider-openshift/internal/provider"
-	"github.com/r2dts/terraform-provider-openshift/internal/provider/testutil"
+	"github.com/gabrielborcean/terraform-provider-openshift/internal/provider"
+	"github.com/gabrielborcean/terraform-provider-openshift/internal/provider/testutil"
 )
 
 // populateMockInstallDir writes the minimal set of files that openshift-install would
