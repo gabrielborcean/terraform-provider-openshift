@@ -76,10 +76,15 @@ setup:
 	  fi; \
 	done
 	@echo ""
-	@echo "Once all secrets are present, run:"
+	@echo "Once all secrets are present:"
 	@echo ""
-	@echo "  make image"
-	@echo "  make run-registry WORKSPACE=\$$(pwd)/test-assisted"
+	@echo "  1. Fill in your values:"
+	@echo "     cp test-assisted/terraform.tfvars.example test-assisted/terraform.tfvars"
+	@echo "     \$$EDITOR test-assisted/terraform.tfvars"
+	@echo ""
+	@echo "  2. Build the image and deploy:"
+	@echo "     make image"
+	@echo "     make run-registry WORKSPACE=\$$(pwd)/test-assisted"
 	@echo ""
 
 .PHONY: build
@@ -149,7 +154,7 @@ image:
 	  --build-arg TERRAFORM_VERSION=$(TF_VERSION) \
 	  --build-arg MIRROR_REGISTRY_VERSION=$(MR_VERSION) \
 	  -t $(IMAGE_NAME):$(IMAGE_TAG) \
-	  -f Dockerfile .
+	  -f Dockerfile . && touch .image-built
 
 
 .PHONY: shell
@@ -162,20 +167,12 @@ run: shell
 .PHONY: plan
 plan: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
-	  bash -c "rm -f .terraform.lock.hcl && \
-	    terraform init && \
-	    terraform plan \
-	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
-	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
-	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+	  bash -c "rm -f .terraform.lock.hcl && terraform init && terraform plan"
 
 .PHONY: destroy
 destroy: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
-	  bash -c "terraform destroy \
-	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
-	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
-	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+	  bash -c "terraform destroy"
 
 .PHONY: validate
 validate: _ensure-dirs
@@ -195,22 +192,13 @@ run-local: _ensure-dirs
 	    chmod +x \$$PLUGIN_DIR/terraform-provider-openshift_v99.0.0 && \
 	    rm -f .terraform.lock.hcl && \
 	    terraform init && \
-	    terraform apply \
-	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
-	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
-	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+	    terraform apply"
 
 # run-registry: pulls provider from registry.terraform.io, runs terraform apply
 .PHONY: run-registry
 run-registry: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
-	  bash -c "unset TF_CLI_ARGS_init && \
-	    rm -f .terraform.lock.hcl && \
-	    terraform init && \
-	    terraform apply \
-	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
-	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
-	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+	  bash -c "unset TF_CLI_ARGS_init && rm -f .terraform.lock.hcl && terraform init && terraform apply"
 
 .PHONY: run-terraform
 run-terraform: _ensure-dirs

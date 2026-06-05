@@ -4,20 +4,24 @@ Terraform provider for OpenShift deployments — bare metal (airgapped or connec
 
 ---
 
-## New here? Three steps to get running
+## New here? Four steps to get running
 
 ```sh
 # 1. Check prerequisites and see what secrets you need
 make setup
 
-# 2. Build the container image (do this once — takes ~5 min)
+# 2. Fill in your config — one file, that's it
+cp test-assisted/terraform.tfvars.example test-assisted/terraform.tfvars
+$EDITOR test-assisted/terraform.tfvars
+
+# 3. Build the container image (do this once — takes ~5 min)
 make image
 
-# 3. Run terraform apply against the test config
+# 4. Deploy
 make run-registry WORKSPACE=$(pwd)/test-assisted
 ```
 
-`make setup` will tell you exactly which files are missing from `./secrets/`. Once they're in place, `make image` and `make run-registry` do everything else.
+All credentials live in `terraform.tfvars` — Terraform loads it automatically, no `-var` flags ever.
 
 **To iterate on provider code without publishing a release:**
 ```sh
@@ -39,9 +43,12 @@ Manages the full lifecycle from a single `terraform apply`:
 
 | Resource | What it manages |
 |---|---|
+| `openshift_agent_iso` | Generates an Agent-Based Installer ISO from your existing `install-config.yaml` and `agent-config.yaml`. One ISO covers all servers (MACs + roles baked in). Write to USB once, boot each server sequentially. Optionally uploads to bastion for PXE serving |
 | `openshift_assisted_service` | Deploys the Assisted Installer service on a bastion host via SSH (podman). Use this for self-hosted/airgapped environments instead of api.openshift.com |
+| `openshift_bmc_boot` | Mounts the discovery ISO via Redfish virtual media and reboots bare-metal hosts. Supports Dell iDRAC, HPE iLO, Supermicro, and generic Redfish v1. Zero-touch — no manual ISO flashing. Requires paid BMC license on some hardware |
 | `openshift_cluster` | Bare-metal OpenShift cluster via the Assisted Installer API. Supports disconnected registries, proxy, and custom infra-env ISO |
 | `openshift_cluster_aws` | OpenShift cluster on AWS via openshift-install IPI. Creates all AWS infrastructure automatically |
+| `openshift_pxe_server` | Deploys a PXE server on the bastion (dnsmasq + nginx). Serves the discovery ISO kernel/initrd over TFTP/HTTP. Zero-touch for servers with unbonded NICs on the provisioning network. No BMC license required |
 | `openshift_mirror_registry` | Sets up a Quay mirror registry on a bastion host |
 | `openshift_image_mirror` | Runs `oc mirror` to sync OCP release images and operator catalogs to the mirror registry |
 | `openshift_catalog_source` | `operators.coreos.com/v1alpha1 CatalogSource` on the cluster |
@@ -141,6 +148,35 @@ resource "openshift_cluster" "prod" {
     }
   ]
 }
+
+# 5. Boot bare-metal servers from the discovery ISO via Redfish — no manual ISO flashing
+resource "openshift_bmc_boot" "nodes" {
+  iso_url = openshift_cluster.prod.discovery_iso_url
+
+  hosts = [
+    {
+      name         = "master-0"
+      bmc_address  = "https://10.0.0.10"
+      bmc_username = "admin"
+      bmc_password = var.bmc_password
+      vendor       = "dell"   # dell, hpe, supermicro, or auto
+    },
+    {
+      name         = "master-1"
+      bmc_address  = "https://10.0.0.11"
+      bmc_username = "admin"
+      bmc_password = var.bmc_password
+    },
+    {
+      name         = "worker-0"
+      bmc_address  = "https://10.0.0.20"
+      bmc_username = "admin"
+      bmc_password = var.bmc_password
+    },
+  ]
+
+  depends_on = [openshift_cluster.prod]
+}
 ```
 
 ---
@@ -239,17 +275,23 @@ Required files before you start:
 
 ---
 
-## Secrets
+## Config
+
+All credentials go in one file — `terraform.tfvars` in your workspace. It's gitignored and auto-loaded by Terraform:
 
 ```sh
-mkdir -p secrets
-cp ~/Downloads/pull-secret.json secrets/pull-secret.json   # console.redhat.com/openshift/downloads
-cp ~/.ssh/id_rsa.pub            secrets/id_rsa.pub
-echo -n "YOUR_OFFLINE_TOKEN"  > secrets/offline-token.txt  # console.redhat.com/openshift/token
-chmod 600 secrets/pull-secret.json secrets/offline-token.txt
+cp test-assisted/terraform.tfvars.example test-assisted/terraform.tfvars
+$EDITOR test-assisted/terraform.tfvars
 ```
 
-Or run `make setup` to see which files are present and which are missing.
+```hcl
+# terraform.tfvars
+offline_token  = "eyJ..."                    # console.redhat.com/openshift/token
+pull_secret    = '{"auths": ...}'            # console.redhat.com/openshift/downloads
+ssh_public_key = "ssh-rsa AAAA..."
+```
+
+Run `make setup` to check which secrets files are present in `./secrets/`.
 
 ---
 

@@ -27,3 +27,4 @@ test/
 **/crash.log
 my-cluster/
 .oc-mirror.log
+.image-built

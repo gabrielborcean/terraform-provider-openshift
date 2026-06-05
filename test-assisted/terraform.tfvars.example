@@ -1,0 +1,22 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never committed.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+
+# ── Required ──────────────────────────────────────────────────────────────────
+
+# Red Hat offline token — console.redhat.com/openshift/token
+offline_token = ""
+
+# Red Hat pull secret JSON — console.redhat.com/openshift/downloads
+pull_secret = ""
+
+# SSH public key for cluster nodes
+ssh_public_key = ""
+
+# ── Optional: BMC boot (if using openshift_bmc_boot) ─────────────────────────
+# bmc_password = ""
+
+# ── Optional: AWS (if using openshift_cluster_aws) ───────────────────────────
+# aws_access_key_id     = ""
+# aws_secret_access_key = ""
