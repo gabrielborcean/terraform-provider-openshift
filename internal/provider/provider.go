@@ -116,8 +116,9 @@ func (p *OpenShiftProvider) Configure(ctx context.Context, req provider.Configur
 
 func (p *OpenShiftProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewInstallConfigResource,
+		NewAssistedServiceResource,
 		NewClusterResource,
+		NewClusterAWSResource,
 		NewMirrorRegistryResource,
 		NewImageMirrorResource,
 		NewCatalogSourceResource,
