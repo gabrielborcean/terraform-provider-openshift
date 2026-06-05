@@ -2,7 +2,7 @@ terraform {
   required_providers {
     openshift = {
       source  = "gabrielborcean/openshift"
-      version = ">= 0.4.5"
+      version = ">= 0.4.6"
     }
   }
 }
