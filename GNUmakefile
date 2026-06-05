@@ -70,6 +70,7 @@ publish-image:
 publish: publish-image
 	podman run --rm -it \
 	  -v $(CURDIR):/repo:Z \
+	  -v $(HOME)/.gnupg:/root/.gnupg:ro,Z \
 	  -e GITHUB_TOKEN=$(shell gh auth token) \
 	  -e GITHUB_ORG=$(NAMESPACE) \
 	  $(PUBLISH_IMAGE):latest $(RELEASE_TAG)
