@@ -132,6 +132,49 @@ The `:Z` SELinux relabeling flag is applied to all mounts — required on RHEL/F
 
 ---
 
+## Publishing to the Terraform Registry
+
+### One-time setup
+
+1. **Generate a GPG key** and export it:
+   ```sh
+   gpg --full-generate-key          # RSA 4096, no expiry
+   gpg --armor --export KEY_ID > gpg-public-key.asc
+   gpg --armor --export-secret-keys KEY_ID > gpg-private-key.asc
+   ```
+
+2. **Add secrets to the GitHub repo** (Settings → Secrets → Actions):
+   - `GPG_PRIVATE_KEY` — contents of `gpg-private-key.asc`
+   - `PASSPHRASE` — your GPG key passphrase
+
+3. **Connect the registry**:
+   - Sign in at [registry.terraform.io](https://registry.terraform.io) with GitHub
+   - Publish → Provider → select `terraform-provider-openshift`
+   - Paste the contents of `gpg-public-key.asc`
+
+### Releasing
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub Actions builds binaries for Linux/macOS/Windows (amd64 + arm64), signs the checksums with your GPG key, and creates a GitHub Release. The Terraform Registry detects the new tag automatically within a few minutes.
+
+The provider will then be available as:
+```hcl
+terraform {
+  required_providers {
+    openshift = {
+      source  = "gabrielborcean/openshift"
+      version = "~> 0.1"
+    }
+  }
+}
+```
+
+---
+
 ## Make targets
 
 ```

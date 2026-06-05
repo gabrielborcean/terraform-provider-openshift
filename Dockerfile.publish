@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+# Build: make publish-image
+# Run:   make publish
+
+FROM docker.io/library/debian:bookworm-slim
+
+ARG GH_CLI_VERSION=2.52.0
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        gnupg \
+        jq \
+        openssh-client \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── GitHub CLI ────────────────────────────────────────────────────────────────
+RUN set -eux; \
+    ARCH=$(dpkg --print-architecture); \
+    curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_CLI_VERSION}/gh_${GH_CLI_VERSION}_linux_${ARCH}.tar.gz" \
+        -o /tmp/gh.tar.gz; \
+    tar -C /usr/local -xzf /tmp/gh.tar.gz --strip-components=1 \
+        "gh_${GH_CLI_VERSION}_linux_${ARCH}/bin/gh"; \
+    rm /tmp/gh.tar.gz; \
+    gh --version
+
+WORKDIR /repo
+
+# Mount points:
+#   /repo            — project root (git repo), read-write
+#   /root/.ssh       — SSH keys for git push, read-only
+#   /root/.config/gh — gh auth token, read-only
+
+COPY scripts/publish.sh /usr/local/bin/publish.sh
+RUN chmod +x /usr/local/bin/publish.sh
+
+ENTRYPOINT ["/usr/local/bin/publish.sh"]
