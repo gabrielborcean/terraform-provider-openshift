@@ -205,6 +205,7 @@ func (r *ClusterResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"image_content_sources": schema.ListNestedAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Disconnected registry mirror configuration.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -455,6 +456,10 @@ func applyClusterToModel(cl *Cluster, model *ClusterModel) {
 	model.StatusInfo = types.StringValue(cl.StatusInfo)
 	model.ConsoleURL = types.StringValue(cl.ConsoleURL)
 	model.APIURL = types.StringValue(cl.APIURL)
+	// Preserve null for optional-computed list to avoid null→empty-list drift.
+	if model.ImageContentSources.IsNull() || model.ImageContentSources.IsUnknown() {
+		model.ImageContentSources = types.ListNull(types.ObjectType{AttrTypes: clusterICSAttrTypes})
+	}
 }
 
 func applyInfraEnvToModel(ie *InfraEnv, model *ClusterModel) {
@@ -523,9 +528,7 @@ func (r *ClusterResource) Create(ctx context.Context, req resource.CreateRequest
 	plan.APIURL = types.StringValue("")
 	plan.KubeadminPassword = types.StringValue("")
 	plan.Hosts = emptyHostsList()
-	if plan.ImageContentSources.IsNull() || plan.ImageContentSources.IsUnknown() {
-		plan.ImageContentSources = emptyICSList()
-	}
+	// Leave ImageContentSources as null if not set — avoid null→empty-list drift
 
 	// 1. Create cluster
 	createParams, err := r.buildCreateParams(&plan, ctx)
