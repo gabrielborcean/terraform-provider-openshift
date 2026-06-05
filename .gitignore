@@ -1,5 +1,6 @@
 # built artifacts
 terraform-provider-openshift
+.provider-local
 dist/
 
 # gpg keys exported by scripts/publish.sh
@@ -19,6 +20,7 @@ test/
 # terraform working files
 **/.terraform/
 **/.terraform.lock.hcl
+**/.terraform.tfstate.lock.info
 **/terraform.tfstate
 **/terraform.tfstate.backup
 **/terraform.tfvars

@@ -92,11 +92,35 @@ image:
 run: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)"
 
-# run-registry: like run but pulls provider from registry.terraform.io instead of local plugin dir
+# run-local: build provider locally, inject into container, then apply (no registry needed)
+.PHONY: run-local
+run-local: _ensure-dirs
+	GOARCH=amd64 GOOS=linux go build -o $(CURDIR)/.provider-local .
+	@PROVIDER_BIN=$(CURDIR)/.provider-local \
+	  scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
+	  bash -c "ARCH=\$$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
+	    PLUGIN_DIR=/usr/local/lib/tf-plugins/registry.terraform.io/gabrielborcean/openshift/99.0.0/linux_\$$ARCH && \
+	    mkdir -p \$$PLUGIN_DIR && \
+	    cp /tmp/provider-local \$$PLUGIN_DIR/terraform-provider-openshift_v99.0.0 && \
+	    chmod +x \$$PLUGIN_DIR/terraform-provider-openshift_v99.0.0 && \
+	    rm -f .terraform.lock.hcl && \
+	    terraform init && \
+	    terraform apply \
+	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
+	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
+	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
+
+# run-registry: pulls provider from registry.terraform.io, runs terraform apply
 .PHONY: run-registry
 run-registry: _ensure-dirs
 	@scripts/podman-run.sh "$(IMAGE_NAME):$(IMAGE_TAG)" "$(WORKSPACE)" "$(INSTALL_DIR)" "$(SECRETS_DIR)" \
-	  bash -c "unset TF_CLI_ARGS_init && exec bash"
+	  bash -c "unset TF_CLI_ARGS_init && \
+	    rm -f .terraform.lock.hcl && \
+	    terraform init && \
+	    terraform apply \
+	      -var=\"offline_token=\$$(cat /secrets/offline-token.txt)\" \
+	      -var=\"pull_secret=\$$(cat /secrets/pull-secret.json)\" \
+	      -var=\"ssh_public_key=\$$(cat /secrets/ssh/id_rsa.pub)\""
 
 .PHONY: run-terraform
 run-terraform: _ensure-dirs

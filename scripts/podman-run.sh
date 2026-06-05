@@ -32,6 +32,10 @@ else
     echo "WARNING: ${SECRETS_DIR}/offline-token.txt not found — skipping mount" >&2
 fi
 
+if [[ -n "${PROVIDER_BIN:-}" && -f "${PROVIDER_BIN}" ]]; then
+    args+=(-v "${PROVIDER_BIN}:/tmp/provider-local:ro,Z")
+fi
+
 args+=("${IMAGE}")
 
 exec podman "${args[@]}" "$@"
