@@ -69,12 +69,19 @@ git push -u origin "${CURRENT_BRANCH}"
 # ── step 3: gpg key ───────────────────────────────────────────────────────────
 step "3/5  GPG signing key"
 
-# Use existing key — never generate a new one
+# If private key file exists (from a prior run), import it so the container
+# keyring has it — needed when running inside podman on macOS where the host
+# GPG agent socket is not forwarded.
+if [[ -f "${GPG_PRIVATE_KEY_FILE}" ]]; then
+    info "Importing GPG key from ${GPG_PRIVATE_KEY_FILE}..."
+    gpg --batch --import "${GPG_PRIVATE_KEY_FILE}" 2>/dev/null || true
+fi
+
 GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG 2>/dev/null \
     | grep -E "^sec" | head -1 | awk '{print $2}' | cut -d'/' -f2 || true)
 
-[[ -n "${GPG_KEY_ID}" ]] || error "No GPG secret key found. Generate one with: gpg --full-generate-key"
-info "Using existing GPG key: ${GPG_KEY_ID}"
+[[ -n "${GPG_KEY_ID}" ]] || error "No GPG secret key found — run make publish once from the host (outside the container) to generate gpg-private-key.asc, then retry."
+info "Using GPG key: ${GPG_KEY_ID}"
 
 info "Exporting GPG key ${GPG_KEY_ID}..."
 gpg --armor --export "${GPG_KEY_ID}" > "${GPG_KEY_FILE}"
