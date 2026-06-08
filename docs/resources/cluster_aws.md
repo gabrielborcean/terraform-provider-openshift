@@ -28,6 +28,7 @@ Creates an OpenShift cluster on AWS using openshift-install IPI. Automatically p
 ### Optional
 
 - `additional_trust_bundle` (String) PEM-encoded CA bundle for disconnected/proxy setups.
+- `ami_id` (String) Custom RHCOS AMI ID to use for cluster nodes. Use openshift_node_ami to build a pre-baked AMI and reference its ami_id here. If not set, openshift-install resolves the default RHCOS AMI for the OCP version.
 - `cluster_network_cidr` (String) CIDR for the cluster pod network.
 - `control_plane_instance_type` (String) EC2 instance type for control plane nodes.
 - `fips` (Boolean) Enable FIPS mode.

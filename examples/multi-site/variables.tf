@@ -1,10 +1,10 @@
 # ── Boot method ───────────────────────────────────────────────────────────────
 variable "boot_method" {
-  description = "How to boot bare-metal nodes: pxe, bmc, or agent. Set per workspace in workspaces/<site>.tfvars."
+  description = "How to boot nodes: pxe, bmc, agent (bare metal), or ami (AWS with pre-baked RHCOS AMI)."
   type        = string
   validation {
-    condition     = contains(["pxe", "bmc", "agent"], var.boot_method)
-    error_message = "boot_method must be one of: pxe, bmc, agent."
+    condition     = contains(["pxe", "bmc", "agent", "ami"], var.boot_method)
+    error_message = "boot_method must be one of: pxe, bmc, agent, ami."
   }
 }
 
@@ -161,6 +161,27 @@ variable "bmc_hosts" {
     vendor       = optional(string, "auto")
   }))
   default = []
+}
+
+# ── AWS ───────────────────────────────────────────────────────────────────────
+variable "aws_region" {
+  description = "AWS region for AMI builds and AWS cluster deployments."
+  type        = string
+  default     = ""
+}
+
+variable "aws_access_key_id" {
+  description = "AWS access key ID. Used by openshift_node_ami and openshift_cluster_aws."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS secret access key."
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 # ── Agent ISO ─────────────────────────────────────────────────────────────────

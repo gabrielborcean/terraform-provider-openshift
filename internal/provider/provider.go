@@ -121,6 +121,7 @@ func (p *OpenShiftProvider) Resources(_ context.Context) []func() resource.Resou
 		NewBMCBootResource,
 		NewClusterResource,
 		NewClusterAWSResource,
+		NewNodeAMIResource,
 		NewPXEServerResource,
 		NewMirrorRegistryResource,
 		NewImageMirrorResource,

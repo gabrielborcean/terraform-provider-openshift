@@ -69,6 +69,7 @@ type ClusterAWSModel struct {
 	ServiceNetworkCIDR       types.String `tfsdk:"service_network_cidr"`
 	MachineNetworkCIDR       types.String `tfsdk:"machine_network_cidr"`
 	AdditionalTrustBundle    types.String `tfsdk:"additional_trust_bundle"`
+	AMIID                    types.String `tfsdk:"ami_id"`
 	InstallDir               types.String `tfsdk:"install_dir"`
 	InstallBinary            types.String `tfsdk:"install_binary"`
 	InstallTimeout           types.String `tfsdk:"install_timeout"`
@@ -189,6 +190,13 @@ func (r *ClusterAWSResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"additional_trust_bundle": schema.StringAttribute{
 				Optional:    true,
 				Description: "PEM-encoded CA bundle for disconnected/proxy setups.",
+			},
+			"ami_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "Custom RHCOS AMI ID to use for cluster nodes. " +
+					"Use openshift_node_ami to build a pre-baked AMI and reference its ami_id here. " +
+					"If not set, openshift-install resolves the default RHCOS AMI for the OCP version.",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"install_dir": schema.StringAttribute{
 				Optional:    true,
@@ -379,6 +387,9 @@ platform:
     region: {{.Region}}
     userTags:
       managed-by: terraform-provider-openshift
+{{- if .AMIID}}
+    amiID: {{.AMIID}}
+{{- end}}
 publish: {{.Publish}}
 pullSecret: '{{.PullSecret}}'
 sshKey: '{{.SSHPublicKey}}'
@@ -429,6 +440,7 @@ type installConfigVars struct {
 	ServiceNetworkCIDR       string
 	MachineNetworkCIDR       string
 	AdditionalTrustBundle    string
+	AMIID                    string
 }
 
 func writeInstallConfig(installDir string, m *ClusterAWSModel) error {
@@ -447,6 +459,7 @@ func writeInstallConfig(installDir string, m *ClusterAWSModel) error {
 		ServiceNetworkCIDR:       m.ServiceNetworkCIDR.ValueString(),
 		MachineNetworkCIDR:       m.MachineNetworkCIDR.ValueString(),
 		AdditionalTrustBundle:    m.AdditionalTrustBundle.ValueString(),
+		AMIID:                    m.AMIID.ValueString(),
 	}
 
 	var buf bytes.Buffer

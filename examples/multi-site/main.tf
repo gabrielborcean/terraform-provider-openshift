@@ -2,7 +2,7 @@ terraform {
   required_providers {
     openshift = {
       source  = "gabrielborcean/openshift"
-      version = ">= 0.4.15"
+      version = ">= 0.4.19"
     }
   }
 }
@@ -78,6 +78,24 @@ resource "openshift_bmc_boot" "this" {
   hosts   = var.bmc_hosts
 
   depends_on = [openshift_cluster.this]
+}
+
+# ── Node AMI (AWS only) ───────────────────────────────────────────────────────
+# Pre-bake container images into an RHCOS AMI so nodes never pull from a
+# registry at boot. Enables blue-green node pool upgrades via AMI rotation.
+# Only used when boot_method = "ami" (AWS deployments).
+
+resource "openshift_node_ami" "this" {
+  count = var.boot_method == "ami" ? 1 : 0
+
+  region                = var.aws_region
+  ocp_version           = var.openshift_version
+  pull_secret           = var.pull_secret
+  aws_access_key_id     = var.aws_access_key_id
+  aws_secret_access_key = var.aws_secret_access_key
+
+  registry_url = var.mirror_registry_url != "" ? var.mirror_registry_url : null
+  work_dir     = "/install-dir/${terraform.workspace}/packer"
 }
 
 # ── Boot: Agent ISO ───────────────────────────────────────────────────────────
